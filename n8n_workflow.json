@@ -1,0 +1,170 @@
+{
+  "name": "SPMS AI Pipeline — Daily Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        },
+        "timezone": "Asia/Kolkata"
+      },
+      "id": "node-schedule-trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/run-pipeline",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "trigger",
+              "value": "scheduled"
+            },
+            {
+              "name": "time",
+              "value": "09:00"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "node-http-request",
+      "name": "HTTP Request — Trigger Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-status-check",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "started",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-if-success",
+      "name": "IF — Pipeline Started",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log success — pipeline was triggered\nconst message = `[SPMS] Pipeline triggered at ${new Date().toISOString()}. Message: ${$input.item.json.message}`;\nconsole.log(message);\nreturn [{ json: { log: message, status: 'triggered', timestamp: new Date().toISOString() } }];"
+      },
+      "id": "node-log-success",
+      "name": "Code — Log Success",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Log error — pipeline failed to start\nconst status = $input.item.json.status || 'unknown';\nconst message = `[SPMS] Pipeline trigger FAILED at ${new Date().toISOString()}. Status: ${status}`;\nconsole.error(message);\nreturn [{ json: { log: message, status: 'error', timestamp: new Date().toISOString() } }];"
+      },
+      "id": "node-log-error",
+      "name": "Code — Log Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 400]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request — Trigger Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request — Trigger Pipeline": {
+      "main": [
+        [
+          {
+            "node": "IF — Pipeline Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Pipeline Started": {
+      "main": [
+        [
+          {
+            "node": "Code — Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code — Log Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "tag-spms",
+      "name": "SPMS"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
