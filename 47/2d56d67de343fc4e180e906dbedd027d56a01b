@@ -1,0 +1,46 @@
+spms-app/app/components/Sidebar.tsx
+  s_b20a1dbbba3be4::t_ef434be9c7b306 1-42
+spms-app/api/tests/test_assignments_routes.py
+  s_b20a1dbbba3be4::t_3e8accc63d1048 1-29
+spms-app/api/tests/test_exams_routes.py
+  s_b20a1dbbba3be4::t_3e8accc63d1048 1-23
+spms-app/api/exams_routes.py
+  s_b20a1dbbba3be4::t_b87322065fe447 1-62
+spms-app/public/data/sidebarLinks.json
+  s_b20a1dbbba3be4::t_ef434be9c7b306 1-9
+spms-app/api/assignments_routes.py
+  s_b20a1dbbba3be4::t_b87322065fe447 1-74
+spms-app/api/no_backend_tickets.py
+  s_b20a1dbbba3be4::t_eae41f9dc56560 1
+spms-app/app/attendance/__tests__/Attendance.test.tsx
+  s_b20a1dbbba3be4::t_3e8accc63d1048 1-10
+spms-app/app/__tests__/layout.test.tsx
+  s_b20a1dbbba3be4::t_ef434be9c7b306 1-18
+spms-app/app/assignments/__tests__/Assignments.test.tsx
+  s_b20a1dbbba3be4::t_3e8accc63d1048 1-16
+spms-app/app/components/__tests__/Sidebar.test.tsx
+  s_b20a1dbbba3be4::t_ef434be9c7b306 1-18
+spms-app/app/layout.tsx
+  s_b20a1dbbba3be4::t_ef434be9c7b306 1-2,4-5,7-9,12-20,22-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "472d56d67de343fc4e180e906dbedd027d56a01b",
+  "prompts": {},
+  "humans": {
+    "h_13df155a131776": {
+      "author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  },
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
