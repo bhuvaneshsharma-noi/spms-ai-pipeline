@@ -2,15 +2,13 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-800 text-white text-center p-4">
-      <p>Student Personal Management System &copy; {new Date().getFullYear()}</p>
-      <div className="flex justify-center space-x-4">
-        <a href="/dashboard" className="hover:underline">Dashboard</a>
-        <a href="/assignments" className="hover:underline">Assignments</a>
-        <a href="/attendance" className="hover:underline">Attendance</a>
-        <a href="/exams" className="hover:underline">Exams</a>
+    <footer className='bg-gray-800 text-white p-4 mt-4'>
+      <div className='text-center'>
+        <p>Student Personal Management System &copy; {new Date().getFullYear()}</p>
+        <p>Quick Links: <a href='/dashboard' className='text-indigo-400'>Dashboard</a>, <a href='/assignments' className='text-indigo-400'>Assignments</a>, <a href='/attendance' className='text-indigo-400'>Attendance</a>, <a href='/exams' className='text-indigo-400'>Exams</a></p>
+        <p>Helping students stay organized</p>
+        <p>Contact: info@spms.com</p>
       </div>
-      <p className="mt-2">Helping students stay organized</p>
     </footer>
   );
 };

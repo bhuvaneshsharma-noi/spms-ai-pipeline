@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import Footer from '../Footer';
 
-describe('Footer Component', () => {
-  test('renders footer content', () => {
+describe('Footer', () => {
+  it('renders footer content', () => {
     render(<Footer />);
     expect(screen.getByText(/Student Personal Management System/i)).toBeInTheDocument();
-    expect(screen.getByText(/Helping students stay organized/i)).toBeInTheDocument();
+    expect(screen.getByText(/Quick Links/i)).toBeInTheDocument();
+    expect(screen.getByText(/Contact: info@spms.com/i)).toBeInTheDocument();
   });
 });
