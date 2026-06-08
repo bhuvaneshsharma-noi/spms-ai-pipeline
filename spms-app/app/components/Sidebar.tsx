@@ -1,49 +1,39 @@
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { HiMenu, HiX } from 'react-icons/hi';
+"use client";
 
-const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
+import { useState } from "react";
+import Link from "next/link";
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
+const NAV_LINKS = [
+  { href: "/",            label: "Dashboard",  icon: "⊞" },
+  { href: "/assignments", label: "Assignments", icon: "✎" },
+  { href: "/exams",       label: "Exams",       icon: "📋" },
+  { href: "/attendance",  label: "Attendance",  icon: "✓" },
+  { href: "/timetable",   label: "Timetable",   icon: "📅" },
+  { href: "/notes",       label: "Notes",       icon: "📝" },
+  { href: "/timer",       label: "Study Timer", icon: "⏱" },
+];
+
+export default function Sidebar() {
+  const [open, setOpen] = useState(true);
 
   return (
-    <div className={`bg-gray-800 text-white h-full sticky top-0 transition-transform duration-300 ${isOpen ? 'w-64' : 'w-16'}`}> 
-      <div className="flex items-center justify-between p-4">
-        <h1 className={`text-lg font-bold transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>SPMS</h1>
-        <button onClick={toggleSidebar} className="text-white focus:outline-none">
-          {isOpen ? <HiX size={24} /> : <HiMenu size={24} />}
+    <aside className={`bg-slate-800 text-white sticky top-0 h-screen flex-shrink-0 flex flex-col transition-all duration-300 ${open ? "w-56" : "w-14"}`}>
+      <div className="flex items-center justify-between px-3 py-4 border-b border-slate-700">
+        {open && <span className="text-xs font-bold leading-tight">Student Personal<br />Management System</span>}
+        <button onClick={() => setOpen(!open)} className="ml-auto text-slate-300 hover:text-white text-xl px-1" title={open ? "Collapse" : "Expand"}>
+          {open ? "‹" : "›"}
         </button>
       </div>
-      <nav className="mt-4">
-        <ul>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/dashboard">Dashboard</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/assignments">Assignments</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/exams">Exams</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/attendance">Attendance</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/timetable">Timetable</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/notes">Notes</Link>
-          </li>
-          <li className="p-2 hover:bg-gray-700">
-            <Link href="/study-timer">Study Timer</Link>
-          </li>
-        </ul>
+      <nav className="flex-1 mt-2">
+        {NAV_LINKS.map((link) => (
+          <Link key={link.href} href={link.href}
+            className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium hover:bg-slate-700 transition-colors"
+            title={!open ? link.label : undefined}>
+            <span className="text-base w-5 text-center flex-shrink-0">{link.icon}</span>
+            {open && <span>{link.label}</span>}
+          </Link>
+        ))}
       </nav>
-    </div>
+    </aside>
   );
-};
-
-export default Sidebar;
+}
