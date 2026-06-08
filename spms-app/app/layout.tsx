@@ -15,6 +15,7 @@ const NAV_LINKS = [
   { href: "/attendance", label: "Attendance"  },
   { href: "/timetable",  label: "Timetable"   },
   { href: "/notes",      label: "Notes"       },
+  { href: "/timer",     label: "Study Timer" },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -3,231 +3,155 @@
 import { useEffect, useState } from "react";
 
 interface AttendanceRecord {
+  id: string;
+  subject: string;
+  date: string;
+  status: "Present" | "Absent" | "Late";
+}
+
+interface SubjectSummary {
   subject: string;
   present: number;
   absent: number;
+  late: number;
+  total: number;
+  percentage: number;
 }
 
-function loadAttendance(): AttendanceRecord[] {
+const STATUS_COLORS = {
+  Present: "bg-green-100 text-green-700",
+  Absent: "bg-red-100 text-red-700",
+  Late: "bg-yellow-100 text-yellow-700",
+};
+
+function generateId(): string { return `att-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`; }
+
+function loadRecords(): AttendanceRecord[] {
   if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem("spms-attendance");
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
+  try { const raw = localStorage.getItem("spms-attendance"); return raw ? JSON.parse(raw) : []; }
+  catch { return []; }
 }
 
-function saveAttendance(data: AttendanceRecord[]): void {
+function saveRecords(data: AttendanceRecord[]): void {
   localStorage.setItem("spms-attendance", JSON.stringify(data));
 }
 
-// Calculate attendance percentage for one record
-function percentage(record: AttendanceRecord): number {
-  const total = record.present + record.absent;
-  if (total === 0) return 0;
-  return Math.round((record.present / total) * 100);
-}
-
-// Return Tailwind colour classes based on attendance percentage
-function statusColor(pct: number): { bar: string; text: string; badge: string } {
-  if (pct >= 75) return { bar: "bg-green-500", text: "text-green-700", badge: "bg-green-100 text-green-700" };
-  if (pct >= 60) return { bar: "bg-yellow-400", text: "text-yellow-700", badge: "bg-yellow-100 text-yellow-700" };
-  return { bar: "bg-red-500", text: "text-red-700", badge: "bg-red-100 text-red-700" };
-}
-
-// Classes still needed to reach 75% attendance
-function classesNeeded(record: AttendanceRecord): number {
-  const pct = percentage(record);
-  if (pct >= 75) return 0;
-  const total = record.present + record.absent;
-  // Solve: present / (total + x) = 0.75  →  x = (0.75*total - present) / 0.25
-  const needed = Math.ceil((0.75 * total - record.present) / 0.25);
-  return Math.max(0, needed);
+function getSummaries(records: AttendanceRecord[]): SubjectSummary[] {
+  const map: Record<string, SubjectSummary> = {};
+  for (const r of records) {
+    if (!map[r.subject]) map[r.subject] = { subject: r.subject, present: 0, absent: 0, late: 0, total: 0, percentage: 0 };
+    map[r.subject].total++;
+    if (r.status === "Present") map[r.subject].present++;
+    else if (r.status === "Absent") map[r.subject].absent++;
+    else if (r.status === "Late") map[r.subject].late++;
+  }
+  return Object.values(map).map((s) => ({ ...s, percentage: Math.round(((s.present + s.late) / s.total) * 100) }));
 }
 
 export default function AttendancePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [newSubject, setNewSubject] = useState("");
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"summary" | "log">("summary");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ subject: "", date: new Date().toISOString().split("T")[0], status: "Present" as AttendanceRecord["status"] });
 
-  useEffect(() => {
-    setRecords(loadAttendance());
-    setLoading(false);
-  }, []);
+  useEffect(() => { setRecords(loadRecords()); setLoading(false); }, []);
 
-  // Add a new subject with zero attendance
-  function addSubject() {
-    const name = newSubject.trim();
-    if (!name) return;
-    if (records.some((r) => r.subject.toLowerCase() === name.toLowerCase())) return;
-    const updated = [...records, { subject: name, present: 0, absent: 0 }];
-    setRecords(updated);
-    saveAttendance(updated);
-    setNewSubject("");
+  const summaries = getSummaries(records);
+
+  function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.subject) return;
+    const updated = [...records, { ...form, id: generateId() }];
+    setRecords(updated); saveRecords(updated);
+    setForm({ subject: "", date: new Date().toISOString().split("T")[0], status: "Present" });
+    setShowForm(false);
   }
 
-  // Record a present or absent entry for a subject
-  function markAttendance(subject: string, type: "present" | "absent") {
-    const updated = records.map((r) =>
-      r.subject === subject ? { ...r, [type]: r[type] + 1 } : r
-    );
-    setRecords(updated);
-    saveAttendance(updated);
+  function deleteRecord(id: string) {
+    const updated = records.filter((r) => r.id !== id);
+    setRecords(updated); saveRecords(updated);
   }
 
-  // Undo the last attendance entry
-  function undoLast(subject: string, type: "present" | "absent") {
-    const updated = records.map((r) =>
-      r.subject === subject ? { ...r, [type]: Math.max(0, r[type] - 1) } : r
-    );
-    setRecords(updated);
-    saveAttendance(updated);
-  }
-
-  // Remove a subject entirely
-  function removeSubject(subject: string) {
-    const updated = records.filter((r) => r.subject !== subject);
-    setRecords(updated);
-    saveAttendance(updated);
-  }
-
-  // Overall average across all subjects
-  const overall =
-    records.length > 0
-      ? Math.round(records.reduce((sum, r) => sum + percentage(r), 0) / records.length)
-      : 0;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-slate-500 animate-pulse">Loading attendance...</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><p className="text-slate-500 animate-pulse">Loading...</p></div>;
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-slate-800">Attendance</h1>
-        <p className="text-slate-500 mt-1">
-          Overall average: {" "}
-          <span className={`font-semibold ${statusColor(overall).text}`}>{overall}%</span>
-          {" "}&bull; {records.length} subjects tracked
-        </p>
-      </div>
-
-      {/* Add subject input */}
-      <div className="flex gap-3 mb-8">
-        <input
-          type="text"
-          value={newSubject}
-          onChange={(e) => setNewSubject(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && addSubject()}
-          placeholder="Add a new subject, e.g. Physics"
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
-        />
-        <button
-          onClick={addSubject}
-          className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm"
-        >
-          + Add Subject
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">Attendance Tracker</h1>
+          <p className="text-slate-500 mt-1">{records.length} total records · {summaries.length} subjects</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg transition-colors">
+          {showForm ? "Cancel" : "+ Mark Attendance"}
         </button>
       </div>
 
-      {/* Subject attendance cards */}
-      {records.length === 0 ? (
-        <div className="text-center py-16 text-slate-400">
-          <p className="text-lg">No subjects added yet.</p>
-          <p className="text-sm mt-1">Add a subject above to start tracking attendance.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {records.map((record) => {
-            const pct = percentage(record);
-            const total = record.present + record.absent;
-            const colors = statusColor(pct);
-            const needed = classesNeeded(record);
-            return (
-              <div
-                key={record.subject}
-                className="bg-white rounded-xl shadow-sm border border-slate-100 p-5"
-              >
-                {/* Subject name and percentage */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <h2 className="font-semibold text-slate-800">{record.subject}</h2>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${colors.badge}`}>
-                      {pct}%
-                    </span>
-                    {needed > 0 && (
-                      <span className="text-xs text-red-500">
-                        Need {needed} more to reach 75%
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => removeSubject(record.subject)}
-                    className="text-slate-300 hover:text-red-400 transition-colors text-lg leading-none"
-                    title="Remove subject"
-                  >
-                    &times;
-                  </button>
-                </div>
+      {showForm && (
+        <form onSubmit={handleAdd} className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-700 mb-4">New Attendance Entry</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div><label className="block text-sm font-medium text-slate-600 mb-1">Subject *</label>
+              <input type="text" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400" placeholder="e.g. Physics" /></div>
+            <div><label className="block text-sm font-medium text-slate-600 mb-1">Date</label>
+              <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400" /></div>
+            <div><label className="block text-sm font-medium text-slate-600 mb-1">Status</label>
+              <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as AttendanceRecord["status"] })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400">
+                <option>Present</option><option>Absent</option><option>Late</option>
+              </select></div>
+          </div>
+          <button type="submit" className="mt-4 bg-primary-600 hover:bg-primary-700 text-white font-medium px-6 py-2 rounded-lg transition-colors">Save</button>
+        </form>
+      )}
 
-                {/* Progress bar */}
-                <div className="h-2 bg-slate-100 rounded-full mb-3 overflow-hidden">
-                  <div
-                    className={`h-2 rounded-full transition-all ${colors.bar}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
+      <div className="flex gap-2 mb-6">
+        {(["summary", "log"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${tab === t ? "bg-primary-600 text-white" : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>{t === "summary" ? "Subject Summary" : "Full Log"}</button>
+        ))}
+      </div>
 
-                {/* Stats and action buttons */}
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex gap-4 text-sm text-slate-500">
-                    <span>
-                      <span className="text-green-600 font-semibold">{record.present}</span> present
-                    </span>
-                    <span>
-                      <span className="text-red-500 font-semibold">{record.absent}</span> absent
-                    </span>
-                    <span>{total} total</span>
+      {tab === "summary" && (
+        <>
+          {summaries.length === 0 ? (
+            <div className="text-center py-16 text-slate-400"><p className="text-lg">No records yet. Mark attendance to see summaries.</p></div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {summaries.sort((a, b) => a.percentage - b.percentage).map((s) => (
+                <div key={s.subject} className={`bg-white rounded-xl shadow-sm border p-5 ${s.percentage < 75 ? "border-red-200" : "border-slate-100"}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-slate-800">{s.subject}</p>
+                    <span className={`text-lg font-bold ${s.percentage < 75 ? "text-red-600" : "text-green-600"}`}>{s.percentage}%</span>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => undoLast(record.subject, "present")}
-                      className="text-xs px-2 py-1 text-slate-400 hover:text-slate-600 border border-slate-200 rounded transition-colors"
-                      title="Undo last present"
-                    >
-                      ↩ P
-                    </button>
-                    <button
-                      onClick={() => undoLast(record.subject, "absent")}
-                      className="text-xs px-2 py-1 text-slate-400 hover:text-slate-600 border border-slate-200 rounded transition-colors"
-                      title="Undo last absent"
-                    >
-                      ↩ A
-                    </button>
-                    <button
-                      onClick={() => markAttendance(record.subject, "absent")}
-                      className="px-3 py-1.5 text-sm font-medium bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
-                    >
-                      Absent
-                    </button>
-                    <button
-                      onClick={() => markAttendance(record.subject, "present")}
-                      className="px-3 py-1.5 text-sm font-medium bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors"
-                    >
-                      Present
-                    </button>
+                  <div className="w-full bg-slate-100 rounded-full h-2 mb-3">
+                    <div className={`h-2 rounded-full ${s.percentage < 75 ? "bg-red-400" : "bg-green-500"}`} style={{ width: `${s.percentage}%` }} />
                   </div>
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Present: {s.present}</span><span>Late: {s.late}</span><span>Absent: {s.absent}</span>
+                  </div>
+                  {s.percentage < 75 && <p className="text-xs text-red-600 mt-2 font-medium">Warning: Below 75% threshold</p>}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {tab === "log" && (
+        <>
+          {records.length === 0 ? (
+            <div className="text-center py-16 text-slate-400"><p className="text-lg">No attendance records found.</p></div>
+          ) : (
+            <div className="space-y-2">
+              {[...records].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((r) => (
+                <div key={r.id} className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full flex-shrink-0 ${STATUS_COLORS[r.status]}`}>{r.status}</span>
+                  <div className="flex-1"><p className="text-sm font-medium text-slate-800">{r.subject}</p><p className="text-xs text-slate-400">{new Date(r.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p></div>
+                  <button onClick={() => deleteRecord(r.id)} className="text-slate-300 hover:text-red-400 transition-colors text-lg leading-none">&times;</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

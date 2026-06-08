@@ -3,18 +3,17 @@ agents.py — All 5 CrewAI agents for the SPMS autonomous pipeline.
 Each agent has a focused role, goal, backstory, tools, and llm config.
 """
 
-from crewai import Agent
-from langchain_openai import ChatOpenAI
+import os
+from crewai import Agent, LLM
 
 from tools import JiraReadTool, JiraUpdateTool, FileWriterTool, ShellCommandTool, VercelDeployTool
 from config import OPENAI_API_KEY
 
-# Shared LLM — gpt-4o-mini for best quality at low cost
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    api_key=OPENAI_API_KEY,
-    temperature=0.1,  # low temperature for deterministic code generation
-)
+# Set API key in environment so CrewAI LLM can pick it up
+os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
+
+# Shared LLM using CrewAI's own LLM class
+llm = LLM(model="gpt-4o-mini", temperature=0.1)
 
 # Instantiate tools once so all agents share the same object
 jira_read_tool = JiraReadTool()

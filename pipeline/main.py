@@ -214,6 +214,13 @@ async def get_status() -> PipelineStatusResponse:
     )
 
 
+@app.get("/tickets")
+async def get_tickets() -> dict:
+    """Return all To Do Jira tickets for display in the Next.js app."""
+    tickets = jira_client.get_todo_tickets()
+    return {"tickets": tickets, "count": len(tickets)}
+
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check() -> HealthResponse:
     """Check that FastAPI is up, Jira is reachable, and Vercel path exists."""

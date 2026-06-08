@@ -22,20 +22,19 @@ def _auth_header() -> dict[str, str]:
 
 def get_todo_tickets() -> list[dict[str, Any]]:
     """Fetch all To Do tickets for user1 and user2, sorted by priority descending."""
-    url = f"{JIRA_URL}/rest/api/3/search"
+    url = f"{JIRA_URL}/rest/api/3/search/jql"
     jql = (
         f'project={JIRA_PROJECT_KEY} '
         f'AND status="To Do" '
-        f'AND assignee in ("{JIRA_USER1}", "{JIRA_USER2}") '
         f'ORDER BY priority DESC'
     )
-    params = {
+    payload = {
         "jql": jql,
-        "fields": "summary,description,assignee,priority,status",
+        "fields": ["summary", "description", "assignee", "priority", "status"],
         "maxResults": 50,
     }
     try:
-        response = requests.get(url, headers=_auth_header(), params=params, timeout=10)
+        response = requests.post(url, headers=_auth_header(), json=payload, timeout=10)
         response.raise_for_status()
         issues = response.json().get("issues", [])
         tickets = []
