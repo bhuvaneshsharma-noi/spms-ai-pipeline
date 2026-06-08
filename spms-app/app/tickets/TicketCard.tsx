@@ -2,7 +2,8 @@
 
 import React from 'react';
 
-const TicketCard = ({ ticket }) => {
+interface Ticket { title: string; description: string; assignedTo: string; status: string; }
+const TicketCard = ({ ticket }: { ticket: Ticket }) => {
   return (
     <div className='bg-white shadow-md rounded-lg p-4'>
       <h2 className='text-xl font-semibold'>{ticket.title}</h2>

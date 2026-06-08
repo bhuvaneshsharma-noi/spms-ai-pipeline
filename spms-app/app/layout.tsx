@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
+import type { Metadata } from "next";
+import Sidebar from "./components/Sidebar";
+import "./globals.css";
 
-const Layout = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
-  };
-
-  return (
-    <div className="flex">
-      <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
-      <div className="flex-1 p-4">
-        <button onClick={toggleSidebar} className="md:hidden p-2 bg-blue-500 text-white rounded">
-          Toggle Menu
-        </button>
-        {children}
-      </div>
-    </div>
-  );
+export const metadata: Metadata = {
+  title: "SPMS — Student Personal Management System",
+  description: "Manage assignments, exams, attendance, timetable, and notes.",
 };
 
-export default Layout;
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body className="min-h-screen bg-slate-50 text-slate-900 flex">
+        <Sidebar />
+
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+          <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </main>
+
+          <footer className="border-t border-slate-200 py-4 text-center text-sm text-slate-500">
+            SPMS — Student Personal Management System &copy; {new Date().getFullYear()}
+          </footer>
+        </div>
+      </body>
+    </html>
+  );
+}
