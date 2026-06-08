@@ -1,0 +1,16 @@
+[
+  {
+    "id": "SPMS-11",
+    "summary": "Replace top navbar with collapsible sidebar navigation",
+    "description": "Replace the current top navigation bar in layout.tsx with a left-side collapsible sidebar. The sidebar should show navigation links: Dashboard, Assignments, Exams, Attendance, Timetable, Notes, Study Timer. It should have a toggle button to collapse to icon-only mode. The sidebar should be sticky on...",
+    "assignee": "user1",
+    "priority": "High"
+  },
+  {
+    "id": "SPMS-12",
+    "summary": "Add footer section to all pages",
+    "description": "Add a footer section that appears at the bottom of every page in the SPMS app. The footer should include: the app name 'Student Personal Management System', copyright year, quick links to Dashboard, Assignments, Attendance, and Exams pages, a tagline like 'Helping students stay organized', and the c...",
+    "assignee": "user1",
+    "priority": "Medium"
+  }
+]
