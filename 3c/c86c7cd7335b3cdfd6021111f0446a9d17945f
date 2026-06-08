@@ -1,0 +1,34 @@
+spms-app/app/layout.tsx
+  s_b20a1dbbba3be4::t_65601164a420a5 1-3,5-8,10,12-20,22-29
+spms-app/app/tickets/TicketCard.tsx
+  s_b20a1dbbba3be4::t_424022cff80b23 5-6
+pipeline/main.py
+  s_b20a1dbbba3be4::t_2c5d2fd1084dbe 178-181,183-186,190-191,193-195,197-200,202-203,206,208-209,211
+  s_b20a1dbbba3be4::t_636e2122683eab 109-112,114-118,153,156,165
+  s_b20a1dbbba3be4::t_6321d9d252c69c 7,21,28,31-42,52,54,68,91,96,100-104,107-108,113,119-124,127-128,131-132,134-142,145-146,152,154-155,158-163,167,170,173,182,187-189,192,196,201,204-205,207,210,222,224,233,241,243-244,246,249-258
+spms-app/next-env.d.ts
+  s_b20a1dbbba3be4::t_c7f2b9a8cdd293 3
+spms-app/app/components/Sidebar.tsx
+  s_b20a1dbbba3be4::t_d2fe0e5bad2d6e 1-17,20-37,40-53,55,57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "3cc86c7cd7335b3cdfd6021111f0446a9d17945f",
+  "prompts": {},
+  "humans": {
+    "h_13df155a131776": {
+      "author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  },
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
