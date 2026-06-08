@@ -1,0 +1,9 @@
+[
+  { "name": "Dashboard", "path": "/dashboard" },
+  { "name": "Assignments", "path": "/assignments" },
+  { "name": "Exams", "path": "/exams" },
+  { "name": "Attendance", "path": "/attendance" },
+  { "name": "Timetable", "path": "/timetable" },
+  { "name": "Notes", "path": "/notes" },
+  { "name": "Study Timer", "path": "/study-timer" }
+]
