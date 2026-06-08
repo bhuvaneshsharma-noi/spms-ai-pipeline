@@ -1,0 +1,24 @@
+spms-app/app/assignments/page.tsx
+  s_b20a1dbbba3be4::t_5711095923c852 1,3-39,41-65,68-122,125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "6731e84fbd6480799416c75671bc30a76a5ebd16",
+  "prompts": {},
+  "humans": {
+    "h_13df155a131776": {
+      "author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  },
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
