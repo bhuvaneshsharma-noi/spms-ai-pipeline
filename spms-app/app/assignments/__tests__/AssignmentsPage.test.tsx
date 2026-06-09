@@ -4,7 +4,6 @@ import AssignmentsPage from '../page';
 jest.mock('next/router', () => ({
   useRouter: () => ({
     push: jest.fn(),
-    pathname: '',
   }),
 }));
 
@@ -13,21 +12,30 @@ describe('AssignmentsPage', () => {
     fetch.resetMocks();
   });
 
-  it('renders loading state initially', () => {
+  test('renders loading state', () => {
     render(<AssignmentsPage />);
-    expect(screen.getByText(/Loading.../i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading assignments.../i)).toBeInTheDocument();
   });
 
-  it('renders assignments when fetched successfully', async () => {
-    fetch.mockResponseOnce(JSON.stringify([{ id: 1, title: 'Test Assignment', subject: 'Math', dueDate: '2023-10-10', priority: 'high' }]));
-    render(<AssignmentsPage />);
-    await waitFor(() => expect(screen.getByText(/Test Assignment/i)).toBeInTheDocument());
-    expect(screen.getByText(/No assignments found./i)).not.toBeInTheDocument();
-  });
-
-  it('renders error message when fetch fails', async () => {
-    fetch.mockRejectOnce(new Error('Failed to fetch assignments'));
+  test('renders error message on fetch failure', async () => {
+    fetch.mockReject(new Error('Failed to fetch assignments'));
     render(<AssignmentsPage />);
     await waitFor(() => expect(screen.getByText(/Failed to fetch assignments/i)).toBeInTheDocument());
+  });
+
+  test('renders no assignments found message', async () => {
+    fetch.mockResponseOnce(JSON.stringify([]));
+    render(<AssignmentsPage />);
+    await waitFor(() => expect(screen.getByText(/No assignments found./i)).toBeInTheDocument());
+  });
+
+  test('renders assignments list', async () => {
+    const assignments = [{ id: 1, title: 'Test Assignment', subject: 'Math', dueDate: '2023-10-01', priority: 'High' }];
+    fetch.mockResponseOnce(JSON.stringify(assignments));
+    render(<AssignmentsPage />);
+    await waitFor(() => expect(screen.getByText(/Test Assignment/i)).toBeInTheDocument());
+    expect(screen.getByText(/Subject: Math/i)).toBeInTheDocument();
+    expect(screen.getByText(/Due Date: 2023-10-01/i)).toBeInTheDocument();
+    expect(screen.getByText(/High/i)).toBeInTheDocument();
   });
 });
