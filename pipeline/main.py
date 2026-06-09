@@ -250,6 +250,19 @@ def _build_and_fix() -> bool:
         content = re.sub(r"^import\s+\{[^}]+\}\s+from\s+'react-icons[^']*';\n?", "", content, flags=re.MULTILINE)
         content = re.sub(r'^import\s+\S+\s+from\s+"react-icons[^"]*";\n?', "", content, flags=re.MULTILINE)
 
+        # Fix 5: TypeScript implicit any — add types to common untyped parameters
+        # (event) => { ... }  →  (event: React.FormEvent) => { ... }
+        content = re.sub(r'\(event\)\s*=>', '(event: React.FormEvent) =>', content)
+        # (e) => { e.preventDefault() }  →  (e: React.FormEvent) => { ... }
+        content = re.sub(r'\(e\)\s*=>\s*\{[^}]*preventDefault', lambda m: m.group(0).replace('(e) =>', '(e: React.FormEvent) =>'), content)
+        # map((item) => ...)  →  map((item: any) => ...)  for untyped array maps
+        content = re.sub(r'\.map\(\((\w+)\)\s*=>', lambda m: f'.map(({m.group(1)}: any) =>', content) if 'useState([])' in content else content
+
+        # Fix 6: Replace useState([]) with useState<any[]>([]) to avoid implicit any
+        content = re.sub(r'useState\(\[\]\)', 'useState<any[]>([])', content)
+        content = re.sub(r'useState\(\{\}\)', 'useState<Record<string, any>>({})', content)
+        content = re.sub(r'useState\(null\)', 'useState<string | null>(null)', content)
+
         if content != original:
             with open(abs_path, "w", encoding="utf-8") as f:
                 f.write(content)
