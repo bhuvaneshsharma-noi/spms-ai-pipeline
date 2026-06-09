@@ -1,0 +1,42 @@
+spms-app/app/assignments/page.tsx
+  s_b20a1dbbba3be4::t_c865628fbdae9a 38
+  s_b20a1dbbba3be4::t_e5b61adcc6f891 14-18,21,24-25,27,29-30,32-34,36-37,40,47,55,58,60,62,64,68,73,76-77,79-81,85
+spms-app/app/attendance/__tests__/AttendancePage.test.tsx
+  s_b20a1dbbba3be4::t_c865628fbdae9a 1,4-6,11-12,17,20-21,24-28
+spms-app/api/assignments_routes.py
+  s_b20a1dbbba3be4::t_c865628fbdae9a 9,22-24,26-30,32-34,36-39,41-47,51-60,62-68
+pipeline/main.py
+  s_b20a1dbbba3be4::t_5de52cf09b633e 253-265
+spms-app/app/components/ThemeSwitcher.tsx
+  s_b20a1dbbba3be4::t_c865628fbdae9a 1-7,9-24
+  s_b20a1dbbba3be4::t_5a2e0af84022db 8
+spms-app/app/assignments/__tests__/AssignmentsPage.test.tsx
+  s_b20a1dbbba3be4::t_c865628fbdae9a 1,4-6,11-12,17,20-21,23,26-27,29-38,41-43,45-50
+spms-app/app/components/__tests__/ThemeSwitcher.test.tsx
+  s_b20a1dbbba3be4::t_c865628fbdae9a 1-36
+spms-app/api/tests/test_assignments_routes.py
+  s_b20a1dbbba3be4::t_c865628fbdae9a 9,11,16-20,23,29-33,35-39,41-42,48-52,54-56
+spms-app/app/attendance/page.tsx
+  s_b20a1dbbba3be4::t_2e79354580ed5a 13,16-19,28,30,38,40,43,45-46,49-50,52,59,67,70,72,74,78,83-86,90-100,102-108,111-119,121-124
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "efd7cacc6abb0b5613051c3bd302823835904768",
+  "prompts": {},
+  "humans": {
+    "h_13df155a131776": {
+      "author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  },
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
