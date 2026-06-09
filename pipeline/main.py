@@ -152,11 +152,20 @@ def _run_crew_pipeline() -> None:
         _log("  All agents finished.")
 
         # ── Step 4: Git commit + push ──────────────────────────
-        _log("STEP 4/5  Committing code to GitHub...")
+        _log("STEP 4/5  Build check + auto-fix before commit...")
+        build_ok = _build_and_fix()
+        if not build_ok:
+            _log("  Build still failing after auto-fix — aborting commit.")
+            _run_state["status"] = "error"
+            _run_state["error"] = "Build failed after auto-fix. Code NOT pushed to GitHub."
+            _save_results()
+            return
+
+        _log("STEP 5/5  Committing code to GitHub...")
         deploy_url = _auto_git_push(ticket_ids)
 
         # ── Step 5: Done ───────────────────────────────────────
-        _log("STEP 5/5  Pipeline complete!")
+        _log("STEP 6/6  Pipeline complete!")
         _log(f"  Tickets processed : {len(ticket_ids)}")
         _log(f"  Vercel deploy URL : {deploy_url or 'https://noi-sms.vercel.app'}")
         _log(f"  Jira tickets      : {', '.join(ticket_ids)} → Done")
@@ -173,6 +182,95 @@ def _run_crew_pipeline() -> None:
         _log("=" * 55)
 
     _save_results()
+
+
+def _build_and_fix() -> bool:
+    """
+    Run `yarn build` inside spms-app/.
+    If it fails, auto-fix common agent mistakes and retry once.
+    Returns True if build passes, False if it still fails after fixing.
+    """
+    import subprocess, re
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    app_dir = os.path.join(repo_root, "spms-app")
+
+    def run_build():
+        return subprocess.run(
+            ["yarn", "build"],
+            cwd=app_dir,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+
+    # ── First build attempt ────────────────────────────────────
+    _log("  Running yarn build...")
+    result = run_build()
+
+    if result.returncode == 0:
+        _log("  Build PASSED ✓")
+        return True
+
+    _log("  Build FAILED — scanning errors and auto-fixing...")
+    combined = result.stdout + result.stderr
+
+    # Extract broken file paths from build output
+    # Matches patterns like: ./app/attendance/page.tsx or ./app/components/Sidebar.tsx
+    broken_files = list(dict.fromkeys(re.findall(r"\./([^\s:]+\.tsx)", combined)))
+    _log(f"  Broken files: {broken_files}")
+
+    fixed_any = False
+    for rel_path in broken_files:
+        abs_path = os.path.join(app_dir, rel_path)
+        if not os.path.exists(abs_path):
+            continue
+
+        with open(abs_path, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        original = content
+        lines = content.splitlines()
+
+        # Fix 1: Add "use client" if file uses hooks but is missing the directive
+        uses_hooks = any(hook in content for hook in ["useState", "useEffect", "useRef", "useCallback", "onClick", "onChange"])
+        has_directive = lines[0].strip() == '"use client";' or lines[0].strip() == "'use client';"
+        if uses_hooks and not has_directive:
+            content = '"use client";\n\n' + content
+            _log(f"  Fixed: added 'use client' to {rel_path}")
+
+        # Fix 2: Remove `import Layout from` lines — layout is auto-applied by Next.js
+        content = re.sub(r"^import\s+\w+\s+from\s+['\"]\.\.?/layout['\"];\n?", "", content, flags=re.MULTILINE)
+
+        # Fix 3: Unwrap <Layout>...</Layout> wrapper — just keep children
+        content = re.sub(r"<Layout>\s*\n", "", content)
+        content = re.sub(r"\s*</Layout>", "", content)
+
+        # Fix 4: Remove `import { HiMenu, HiX } from 'react-icons/hi'` (not installed)
+        content = re.sub(r"^import\s+\{[^}]+\}\s+from\s+'react-icons[^']*';\n?", "", content, flags=re.MULTILINE)
+        content = re.sub(r'^import\s+\S+\s+from\s+"react-icons[^"]*";\n?', "", content, flags=re.MULTILINE)
+
+        if content != original:
+            with open(abs_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            fixed_any = True
+
+    if not fixed_any:
+        _log("  No auto-fixable patterns found — build cannot be repaired.")
+        _log(f"  Build errors:\n{combined[-800:]}")
+        return False
+
+    # ── Second build attempt after fixes ──────────────────────
+    _log("  Re-running yarn build after fixes...")
+    result2 = run_build()
+
+    if result2.returncode == 0:
+        _log("  Build PASSED after auto-fix ✓")
+        return True
+
+    _log("  Build still FAILED after auto-fix.")
+    _log(f"  Remaining errors:\n{(result2.stdout + result2.stderr)[-600:]}")
+    return False
 
 
 def _auto_git_push(ticket_ids: list) -> str:
