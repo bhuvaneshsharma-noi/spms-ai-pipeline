@@ -378,14 +378,19 @@ def _pre_build_verify() -> tuple[int, list[str]]:
             content
         )
 
-        # Fix 5: Untyped useState
-        content = re.sub(r'useState\(\[\]\)',  'useState<any[]>([]);',                 content)
-        content = re.sub(r'useState\(\{\}\)',  'useState<Record<string, any>>({});',   content)
+        # Fix 5: Untyped useState — don't add semicolons (avoids ;; double-semicolons)
+        content = re.sub(r'useState\(\[\]\)',  'useState<any[]>([])',                  content)
+        content = re.sub(r'useState\(\{\}\)',  'useState<Record<string, any>>({})',    content)
         content = re.sub(r'useState\(null\)',  'useState<string | null>(null)',         content)
 
-        # Fix 6: catch (err) { ... err.message → (err as Error).message
+        # Fix 6: catch (err) → catch (err: unknown) — idempotent (skip if already typed)
         content = re.sub(r'\} catch \((\w+)\) \{', r'} catch (\1: unknown) {', content)
-        content = re.sub(r'\b(\w+)\.message\b', r'(\1 as Error).message', content)
+        # Fix 7: err.message inside catch blocks only — avoids corrupting response.message etc.
+        content = re.sub(
+            r'(catch\s*\(\s*(\w+)\s*(?::\s*unknown)?\s*\)\s*\{[^}]*?)\b\2\.message\b',
+            lambda m: m.group(0).replace(f'{m.group(2)}.message', f'({m.group(2)} as Error).message'),
+            content, flags=re.DOTALL
+        )
 
         if content != original:
             with open(abs_path, "w", encoding="utf-8") as f:
@@ -487,14 +492,18 @@ def _build_and_fix() -> tuple[bool, str]:
                          lambda m: m.group(0).replace(f'({m.group(1)}: string)', f'({m.group(1)}: React.FormEvent)'),
                          content)
 
-        # Fix 6: Replace useState([]) with useState<any[]>([]) to avoid implicit any
+        # Fix 6: Untyped useState
         content = re.sub(r'useState\(\[\]\)', 'useState<any[]>([])', content)
         content = re.sub(r'useState\(\{\}\)', 'useState<Record<string, any>>({})', content)
-        content = re.sub(r'useState\(null\)', 'useState<string | null>(null)', content)
+        content = re.sub(r'useState\(null\)',  'useState<string | null>(null)', content)
 
-        # Fix 7: catch (err) unknown type — err.message fails TypeScript strict mode
+        # Fix 7: catch (err) → catch (err: unknown); err.message in catch only
         content = re.sub(r'\} catch \((\w+)\) \{', r'} catch (\1: unknown) {', content)
-        content = re.sub(r'\b(\w+)\.message\b', r'(\1 as Error).message', content)
+        content = re.sub(
+            r'(catch\s*\(\s*(\w+)\s*(?::\s*unknown)?\s*\)\s*\{[^}]*?)\b\2\.message\b',
+            lambda m: m.group(0).replace(f'{m.group(2)}.message', f'({m.group(2)} as Error).message'),
+            content, flags=re.DOTALL
+        )
 
         if content != original:
             with open(abs_path, "w", encoding="utf-8") as f:

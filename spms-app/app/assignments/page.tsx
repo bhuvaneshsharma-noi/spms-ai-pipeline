@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 export default function AssignmentsPage() {
-  const [assignments, setAssignments] = useState<any[]>([]);;
+  const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
