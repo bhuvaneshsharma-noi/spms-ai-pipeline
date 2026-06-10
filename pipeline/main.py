@@ -151,6 +151,14 @@ def _run_crew_pipeline() -> None:
         result = crew.kickoff()
         _log("  All agents finished.")
 
+        # ── Step 3.5: Pre-build file verification ─────────────
+        _log("STEP 3.5  Pre-build file verification...")
+        fixed_count, fixed_files = _pre_build_verify()
+        if fixed_count:
+            _log(f"  Auto-fixed {fixed_count} file(s) before build: {', '.join(fixed_files)}")
+        else:
+            _log("  All agent-written files look clean.")
+
         # ── Step 4: Git commit + push ──────────────────────────
         _log("STEP 4/5  Build check + auto-fix before commit...")
         build_ok = _build_and_fix()
@@ -182,6 +190,142 @@ def _run_crew_pipeline() -> None:
         _log("=" * 55)
 
     _save_results()
+
+
+def _pre_build_verify() -> tuple[int, list[str]]:
+    """
+    Scan every .tsx file in spms-app/ that was written or modified by agents
+    (within the last 60 minutes). Apply all known fixes in-place so that
+    yarn build has the best chance of passing on the first attempt.
+
+    Protections:
+      - layout.tsx: if <html>, {children}, or <body are missing → restore from git
+      - Sidebar.tsx: never modified — any agent change is restored from git
+
+    Fixes applied to all other files:
+      0. Literal \\n escapes → real newlines
+      1. Missing "use client" directive on hook-using files
+      2. Bad Layout imports / wrappers
+      3. react-icons imports (not installed)
+      4. Untyped arrow-function parameters
+      5. Untyped useState([]) / useState({}) / useState(null)
+
+    Returns (files_fixed_count, list_of_relative_paths_fixed).
+    """
+    import glob as _glob
+    import time as _time
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    app_dir   = os.path.join(repo_root, "spms-app")
+    cutoff    = _time.time() - 3600  # touched in the last 60 minutes
+
+    all_tsx = _glob.glob(os.path.join(app_dir, "**", "*.tsx"), recursive=True)
+    recent  = [f for f in all_tsx if os.path.getmtime(f) > cutoff]
+
+    fixed: list[str] = []
+
+    # ── SAFE CONTENT for protected files ──────────────────────
+    PROTECTED_LAYOUT = (
+        'import type { Metadata } from "next";\n'
+        'import Sidebar from "./components/Sidebar";\n'
+        'import "./globals.css";\n\n'
+        'export const metadata: Metadata = {\n'
+        '  title: "SPMS — Student Personal Management System",\n'
+        '  description: "Manage assignments, exams, attendance, timetable, and notes.",\n'
+        '};\n\n'
+        'export default function RootLayout({ children }: { children: React.ReactNode }) {\n'
+        '  return (\n'
+        '    <html lang="en">\n'
+        '      <body className="min-h-screen bg-white text-slate-800 flex">\n'
+        '        <Sidebar />\n'
+        '        <div className="flex-1 flex flex-col min-h-screen">\n'
+        '          <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">\n'
+        '            {children}\n'
+        '          </main>\n'
+        '        </div>\n'
+        '      </body>\n'
+        '    </html>\n'
+        '  );\n'
+        '}\n'
+    )
+
+    for abs_path in recent:
+        rel_path = os.path.relpath(abs_path, app_dir)
+
+        # ── Layout.tsx protection ──────────────────────────────
+        if rel_path == "app/layout.tsx":
+            with open(abs_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            # If agent removed <html>, {children}, or <body → it's broken
+            if "<html" not in content or "{children}" not in content or "<body" not in content:
+                _log(f"  PROTECT: layout.tsx was damaged by agent — restoring safe version")
+                with open(abs_path, "w", encoding="utf-8") as f:
+                    f.write(PROTECTED_LAYOUT)
+                fixed.append("app/layout.tsx (restored)")
+            continue  # skip other fixes for layout.tsx
+
+        # ── Sidebar.tsx protection ─────────────────────────────
+        if rel_path == "app/components/Sidebar.tsx":
+            _log(f"  PROTECT: Sidebar.tsx modified by agent — restoring from git")
+            subprocess.run(
+                ["git", "checkout", "HEAD", "spms-app/app/components/Sidebar.tsx"],
+                cwd=repo_root, capture_output=True
+            )
+            fixed.append("app/components/Sidebar.tsx (restored from git)")
+            continue
+
+        # ── Apply fixes to all other .tsx files ───────────────
+        with open(abs_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        original = content
+
+        # Fix 0: Literal \n escapes
+        if r'\n' in content:
+            escaped = content.count(r'\n')
+            real    = content.count('\n')
+            if escaped > real:
+                content = content.replace(r'\n', '\n')
+                content = content.replace(r'\t', '\t')
+                content = content.replace(r'\"', '"')
+                content = content.replace(r"\'", "'")
+
+        lines = content.splitlines()
+
+        # Fix 1: Missing "use client"
+        uses_hooks = any(h in content for h in
+                         ["useState", "useEffect", "useRef", "useCallback", "onClick", "onChange"])
+        has_directive = bool(lines) and lines[0].strip() in ('"use client";', "'use client';")
+        if uses_hooks and not has_directive:
+            content = '"use client";\n\n' + content
+
+        # Fix 2: Bad Layout import / wrapper
+        content = re.sub(r"^import\s+\w+\s+from\s+['\"]\.\.?/layout['\"];\n?", "", content, flags=re.MULTILINE)
+        content = re.sub(r"<Layout>\s*\n", "", content)
+        content = re.sub(r"\s*</Layout>", "", content)
+
+        # Fix 3: react-icons (not installed)
+        content = re.sub(r"^import\s+\{[^}]+\}\s+from\s+'react-icons[^']*';\n?", "", content, flags=re.MULTILINE)
+        content = re.sub(r'^import\s+\S+\s+from\s+"react-icons[^"]*";\n?',       "", content, flags=re.MULTILINE)
+
+        # Fix 4: Untyped arrow params
+        content = re.sub(r'\(([a-zA-Z_]\w*)\)\s*=>', lambda m: f'({m.group(1)}: string) =>', content)
+        content = re.sub(
+            r'\(([a-zA-Z_]\w*): string\)\s*=>\s*\{[^}]*preventDefault',
+            lambda m: m.group(0).replace(f'({m.group(1)}: string)', f'({m.group(1)}: React.FormEvent)'),
+            content
+        )
+
+        # Fix 5: Untyped useState
+        content = re.sub(r'useState\(\[\]\)',  'useState<any[]>([]);',                 content)
+        content = re.sub(r'useState\(\{\}\)',  'useState<Record<string, any>>({});',   content)
+        content = re.sub(r'useState\(null\)',  'useState<string | null>(null)',         content)
+
+        if content != original:
+            with open(abs_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            fixed.append(rel_path)
+
+    return len(fixed), fixed
 
 
 def _build_and_fix() -> bool:
