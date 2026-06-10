@@ -5,6 +5,7 @@ Uses Basic Auth (email + API token) encoded in base64.
 
 import base64
 import requests
+from datetime import datetime
 from typing import Any
 from config import JIRA_URL, JIRA_EMAIL, JIRA_TOKEN, JIRA_PROJECT_KEY, JIRA_USER1, JIRA_USER2
 
@@ -102,7 +103,6 @@ def block_ticket(ticket_id: str, reason: str, action_needed: str = "") -> bool:
       - Posts a detailed comment with reason and action needed
     CEO sees: ticket in BLOCKED column with red label at Highest priority.
     """
-    from datetime import datetime
     transition_ticket(ticket_id, "BLOCKED")
 
     url = f"{JIRA_URL}/rest/api/3/issue/{ticket_id}"

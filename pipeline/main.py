@@ -126,7 +126,6 @@ def _run_crew_pipeline() -> None:
         sprint_id = jira_client.get_active_sprint_id()
         if sprint_id:
             jira_client.move_to_sprint(sprint_id, ticket_ids)
-        from datetime import datetime
         ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
         for tid in ticket_ids:
             jira_client.transition_ticket(tid, "In Progress")
@@ -406,7 +405,6 @@ def _build_and_fix() -> tuple[bool, str]:
     If it fails, auto-fix common agent mistakes and retry once.
     Returns (True, "") on success or (False, error_detail) on failure.
     """
-    import subprocess, re
 
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     app_dir = os.path.join(repo_root, "spms-app")
@@ -531,7 +529,6 @@ def _build_and_fix() -> tuple[bool, str]:
 
 
 def _auto_git_push(ticket_ids: list) -> str:
-    import subprocess
 
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     commit_msg = f"AI pipeline: implement {', '.join(ticket_ids)}"
