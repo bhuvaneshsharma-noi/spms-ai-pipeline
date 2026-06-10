@@ -175,6 +175,9 @@ def _run_crew_pipeline() -> None:
         build_ok = _build_and_fix()
         if not build_ok:
             _log("  Build still failing after auto-fix — aborting commit.")
+            for tid in ticket_ids:
+                jira_client.transition_ticket(tid, "To Do")
+                jira_client.add_comment(tid, "❌ Build failed — ticket moved back to To Do.\nCheck pipeline logs for TypeScript errors.")
             _run_state["status"] = "error"
             _run_state["error"] = "Build failed after auto-fix. Code NOT pushed to GitHub."
             _save_results()
@@ -329,8 +332,15 @@ def _pre_build_verify() -> tuple[int, list[str]]:
         content = re.sub(r"^import\s+\{[^}]+\}\s+from\s+'react-icons[^']*';\n?", "", content, flags=re.MULTILINE)
         content = re.sub(r'^import\s+\S+\s+from\s+"react-icons[^"]*";\n?',       "", content, flags=re.MULTILINE)
 
-        # Fix 4: Untyped arrow params
-        content = re.sub(r'\(([a-zA-Z_]\w*)\)\s*=>', lambda m: f'({m.group(1)}: string) =>', content)
+        # Fix 4: Untyped arrow params — only add : string when param is NOT used as object
+        def _safe_type_param(m: re.Match) -> str:
+            param = m.group(1)
+            # Don't type as string if the param accesses properties (e.g. param.id, param.name)
+            after = content[m.end():]
+            if re.search(rf'\b{re.escape(param)}\s*\.\s*\w+', after[:300]):
+                return m.group(0)  # leave untyped — object, not string
+            return f'({param}: string) =>'
+        content = re.sub(r'\(([a-zA-Z_]\w*)\)\s*=>', _safe_type_param, content)
         content = re.sub(
             r'\(([a-zA-Z_]\w*): string\)\s*=>\s*\{[^}]*preventDefault',
             lambda m: m.group(0).replace(f'({m.group(1)}: string)', f'({m.group(1)}: React.FormEvent)'),
@@ -428,11 +438,12 @@ def _build_and_fix() -> bool:
         content = re.sub(r"^import\s+\{[^}]+\}\s+from\s+'react-icons[^']*';\n?", "", content, flags=re.MULTILINE)
         content = re.sub(r'^import\s+\S+\s+from\s+"react-icons[^"]*";\n?', "", content, flags=re.MULTILINE)
 
-        # Fix 5: TypeScript implicit any — add `: string` to any single untyped
-        # arrow-function parameter that is not already typed.
-        # Matches:  (someName) =>   but NOT  (someName: Type) =>
+        # Fix 5: Untyped arrow params — only add : string when param is NOT used as object
         def _type_param(m: re.Match) -> str:
             param = m.group(1)
+            after = content[m.end():]
+            if re.search(rf'\b{re.escape(param)}\s*\.\s*\w+', after[:300]):
+                return m.group(0)  # object param — leave for TypeScript to infer
             return f'({param}: string) =>'
         content = re.sub(r'\(([a-zA-Z_]\w*)\)\s*=>', _type_param, content)
 
