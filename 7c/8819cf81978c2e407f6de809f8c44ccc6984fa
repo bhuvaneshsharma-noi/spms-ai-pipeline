@@ -1,0 +1,29 @@
+pipeline/main.py
+  s_b20a1dbbba3be4::t_79bfa633afd7e5 7-8
+  s_b20a1dbbba3be4::t_6acd7deb7e91fb 125-133
+  s_b20a1dbbba3be4::t_248ff187c4a4ea 184-186,190-197,200
+pipeline/agents.py
+  s_b20a1dbbba3be4::t_e9f1b06428a4f7 65-66,70
+  s_b20a1dbbba3be4::t_4255680ce9d737 9
+pipeline/jira_client.py
+  s_b20a1dbbba3be4::t_7d2fb99727d504 122-150
+pipeline/tools.py
+  s_b20a1dbbba3be4::t_bb663a69f02ac1 118-145
+  s_b20a1dbbba3be4::t_853cfb34e22b78 34-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "7c8819cf81978c2e407f6de809f8c44ccc6984fa",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
