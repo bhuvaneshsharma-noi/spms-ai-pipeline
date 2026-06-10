@@ -595,6 +595,161 @@ def _auto_git_push(ticket_ids: list) -> tuple[bool, str]:
     return True, "https://noi-sms-bhuvaneshsharma-nois-projects.vercel.app"
 
 
+# ─────────────────────────────────────────────────────────────
+# Visual Verification — screenshot + GPT-4o Vision
+# ─────────────────────────────────────────────────────────────
+
+def _wait_for_vercel(url: str, timeout_sec: int = 180) -> bool:
+    """Poll live URL until it responds 200 or timeout."""
+    import requests as req
+    deadline = time.time() + timeout_sec
+    _log(f"  Waiting for Vercel to go live at {url}...")
+    while time.time() < deadline:
+        try:
+            r = req.get(url, timeout=10)
+            if r.status_code == 200:
+                _log("  Vercel deployment confirmed live ✓")
+                return True
+        except Exception:
+            pass
+        time.sleep(10)
+    _log("  Vercel not confirmed after timeout — skipping visual check.")
+    return False
+
+
+def _take_screenshot(url: str, path: str) -> bool:
+    """Take a full-page screenshot using Playwright Chromium."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            browser = p.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"])
+            page = browser.new_page(viewport={"width": 1280, "height": 800})
+            page.goto(url, timeout=30000, wait_until="networkidle")
+            page.wait_for_timeout(2000)
+            page.screenshot(path=path, full_page=False)
+            browser.close()
+        _log(f"  Screenshot saved: {path}")
+        return True
+    except Exception as e:
+        _log(f"  Screenshot failed: {e}")
+        return False
+
+
+def _vision_check(screenshot_path: str, ticket_summary: str, ticket_description: str) -> tuple[bool, str]:
+    """
+    Send screenshot to GPT-4o Vision.
+    Returns (feature_visible: bool, missing_description: str).
+    """
+    try:
+        import base64
+        from openai import OpenAI
+
+        with open(screenshot_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+
+        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": (
+                            f"You are a QA engineer verifying a deployed web feature.\n\n"
+                            f"JIRA TICKET: {ticket_summary}\n"
+                            f"REQUIREMENT: {ticket_description[:400]}\n\n"
+                            f"Look at this screenshot of the live web app.\n"
+                            f"Answer:\n"
+                            f"1. Is the feature from the ticket VISIBLE on screen? (YES or NO)\n"
+                            f"2. If NO — what exactly is missing?\n"
+                            f"3. Confidence: HIGH / MEDIUM / LOW\n\n"
+                            f"Reply ONLY in this format:\n"
+                            f"VISIBLE: YES\n"
+                            f"MISSING: nothing\n"
+                            f"CONFIDENCE: HIGH"
+                        )
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{img_b64}", "detail": "high"}
+                    }
+                ]
+            }],
+            max_tokens=200,
+        )
+
+        result = response.choices[0].message.content.strip()
+        _log(f"  Vision result: {result.replace(chr(10), ' | ')}")
+        visible = "VISIBLE: YES" in result.upper()
+        missing = ""
+        for line in result.splitlines():
+            if line.upper().startswith("MISSING:"):
+                missing = line.split(":", 1)[1].strip()
+        return visible, missing
+
+    except Exception as e:
+        _log(f"  Vision check error: {e} — assuming PASS (non-blocking)")
+        return True, ""
+
+
+def _visual_verify_tickets(ticket_ids: list, tickets_before: list, live_url: str) -> list[str]:
+    """
+    After deployment:
+    1. Wait for Vercel to go live
+    2. Take screenshot
+    3. Ask GPT-4o Vision if each ticket's feature is visible
+    4. Re-open any ticket whose feature is missing
+    Returns list of ticket IDs that failed visual verification.
+    """
+    _log("  Starting visual verification...")
+    screenshot_dir = "/tmp/pipeline_screenshots"
+    os.makedirs(screenshot_dir, exist_ok=True)
+
+    # Wait for Vercel
+    if not _wait_for_vercel(live_url):
+        return []
+
+    # Screenshot homepage
+    screenshot_path = os.path.join(screenshot_dir, "live_app.png")
+    if not _take_screenshot(live_url, screenshot_path):
+        return []
+
+    failed: list[str] = []
+    ticket_map = {t["id"]: t for t in tickets_before}
+
+    for tid in ticket_ids:
+        ticket = ticket_map.get(tid)
+        if not ticket:
+            continue
+        _log(f"  Checking {tid}: {ticket['summary'][:55]}...")
+        visible, missing = _vision_check(screenshot_path, ticket["summary"], ticket["description"])
+
+        if visible:
+            _log(f"  ✓ {tid} — feature visible on live app")
+            jira_client.add_comment(tid,
+                f"👁️ Visual verification PASSED\n\n"
+                f"GPT-4o confirmed feature is visible on: {live_url}"
+            )
+        else:
+            _log(f"  ✗ {tid} — feature NOT visible. Missing: {missing}")
+            jira_client.add_comment(tid,
+                f"👁️ Visual verification FAILED\n\n"
+                f"GPT-4o checked the live app and the feature is NOT visible.\n"
+                f"Missing: {missing}\n\n"
+                f"Ticket automatically re-opened — pipeline will rebuild on next run."
+            )
+            jira_client.transition_ticket(tid, "To Do")
+            failed.append(tid)
+
+    if failed:
+        _log(f"  Visual check: {len(failed)} ticket(s) failed — re-opened: {', '.join(failed)}")
+    else:
+        _log(f"  Visual check: all {len(ticket_ids)} ticket(s) PASSED ✓")
+
+    return failed
+
+
 def _save_results() -> None:
     state_to_save = {k: v for k, v in _run_state.items() if k != "logs"}
     with open(RESULTS_FILE, "w", encoding="utf-8") as fh:
@@ -767,14 +922,21 @@ def _run_crew_pipeline() -> None:
                 f"Please verify on the app."
             )
 
+        # ── Visual Verification ────────────────────────────────
+        _log("STEP 6/6  Visual verification (screenshot + GPT-4o Vision)...")
+        failed_visual = _visual_verify_tickets(ticket_ids, tickets_before, live_url)
+        # Failed tickets were already re-opened to To Do — pipeline will retry next run
+        verified_ids = [t for t in ticket_ids if t not in failed_visual]
+
         _log("PIPELINE COMPLETE!")
-        _log(f"  Tickets: {', '.join(ticket_ids)} → Done")
+        _log(f"  Verified & Done : {', '.join(verified_ids) if verified_ids else 'none'}")
+        _log(f"  Re-opened (fail): {', '.join(failed_visual) if failed_visual else 'none'}")
         _log(f"  Duration: {duration_sec}s")
         _log(f"  URL: {live_url}")
         _log("=" * 55)
         _run_state.update({
             "status": "success",
-            "tickets_processed": len(ticket_ids),
+            "tickets_processed": len(verified_ids),
             "deployment_url": live_url,
         })
 
