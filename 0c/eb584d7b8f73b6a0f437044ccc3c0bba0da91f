@@ -1,0 +1,12 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "0ceb584d7b8f73b6a0f437044ccc3c0bba0da91f",
+  "prompts": {},
+  "humans": {
+    "h_13df155a131776": {
+      "author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
