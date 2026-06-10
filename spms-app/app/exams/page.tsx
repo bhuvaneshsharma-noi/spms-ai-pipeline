@@ -39,8 +39,8 @@ export default function ExamsPage() {
         {exams.map((exam) => (
           <li key={exam.id} className="p-4 bg-white shadow rounded-lg">
             <h2 className="text-xl font-semibold">{exam.subject}</h2>
-            <p className="text-gray-700">Date: {exam.date}</p>
-            <p className="text-gray-700">Time: {exam.time}</p>
+            <p className="text-gray-600">Date: {exam.date}</p>
+            <p className="text-gray-600">Time: {exam.time}</p>
           </li>
         ))}
       </ul>
