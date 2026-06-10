@@ -179,6 +179,63 @@ def move_to_sprint(sprint_id: int, ticket_ids: list[str]) -> bool:
         return False
 
 
+def get_blocked_tickets() -> list[dict[str, Any]]:
+    """Fetch all BLOCKED tickets for auto-recovery."""
+    url = f"{JIRA_URL}/rest/api/3/search/jql"
+    jql = f'project={JIRA_PROJECT_KEY} AND status="BLOCKED" ORDER BY updated ASC'
+    payload = {"jql": jql, "fields": ["summary", "description", "assignee", "priority", "status", "updated"], "maxResults": 20}
+    try:
+        response = requests.post(url, headers=_auth_header(), json=payload, timeout=10)
+        response.raise_for_status()
+        issues = response.json().get("issues", [])
+        tickets = []
+        for issue in issues:
+            fields = issue.get("fields", {})
+            assignee_field = fields.get("assignee") or {}
+            tickets.append({
+                "id": issue["key"],
+                "summary": fields.get("summary", ""),
+                "description": _extract_plain_text(fields.get("description")),
+                "assignee": assignee_field.get("accountId", ""),
+                "priority": (fields.get("priority") or {}).get("name", "Medium"),
+                "updated": fields.get("updated", ""),
+            })
+        if tickets:
+            print(f"[Jira] Found {len(tickets)} BLOCKED ticket(s) for auto-recovery.")
+        return tickets
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR fetching BLOCKED tickets: {exc}")
+        return []
+
+
+def get_in_progress_tickets() -> list[dict[str, Any]]:
+    """Fetch all In Progress tickets (for watchdog stuck-ticket detection)."""
+    url = f"{JIRA_URL}/rest/api/3/search/jql"
+    jql = f'project={JIRA_PROJECT_KEY} AND status="In Progress" ORDER BY updated ASC'
+    payload = {"jql": jql, "fields": ["summary", "status", "updated"], "maxResults": 20}
+    try:
+        response = requests.post(url, headers=_auth_header(), json=payload, timeout=10)
+        response.raise_for_status()
+        issues = response.json().get("issues", [])
+        return [{"id": i["key"], "summary": i["fields"].get("summary", ""), "updated": i["fields"].get("updated", "")} for i in issues]
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR fetching In Progress tickets: {exc}")
+        return []
+
+
+def get_latest_comment(ticket_id: str) -> str:
+    """Get text of the most recent comment on a ticket (used to read error messages)."""
+    url = f"{JIRA_URL}/rest/api/3/issue/{ticket_id}/comment?orderBy=-created&maxResults=1"
+    try:
+        response = requests.get(url, headers=_auth_header(), timeout=10)
+        response.raise_for_status()
+        comments = response.json().get("comments", [])
+        return _extract_plain_text(comments[0].get("body", "")) if comments else ""
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR fetching comment for {ticket_id}: {exc}")
+        return ""
+
+
 def check_jira_reachable() -> bool:
     """Ping Jira to confirm the instance is reachable and credentials work."""
     url = f"{JIRA_URL}/rest/api/3/myself"
