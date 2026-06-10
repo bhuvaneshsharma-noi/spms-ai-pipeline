@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Sidebar from "./components/Sidebar";
-import Footer from "./components/Footer";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </main>
-          <Footer />
         </div>
       </body>
     </html>

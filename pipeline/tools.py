@@ -128,6 +128,16 @@ class FileWriterTool(BaseTool):
         """Create parent directories and write the full file content."""
         try:
             abs_path = os.path.abspath(filepath)
+            # Fix: LLM sometimes passes literal \n instead of real newlines.
+            # Detect and decode when escaped newlines outnumber real newlines.
+            if r'\n' in content:
+                escaped = content.count(r'\n')
+                real = content.count('\n')
+                if escaped > real:
+                    content = content.replace(r'\n', '\n')
+                    content = content.replace(r'\t', '\t')
+                    content = content.replace(r'\"', '"')
+                    content = content.replace(r"\'", "'")
             os.makedirs(os.path.dirname(abs_path), exist_ok=True)
             with open(abs_path, "w", encoding="utf-8") as fh:
                 fh.write(content)

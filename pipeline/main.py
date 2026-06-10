@@ -232,6 +232,18 @@ def _build_and_fix() -> bool:
         original = content
         lines = content.splitlines()
 
+        # Fix 0: Decode literal \n escape sequences — happens when LLM writes escaped strings
+        if r'\n' in content:
+            escaped = content.count(r'\n')
+            real    = content.count('\n')
+            if escaped > real:
+                content = content.replace(r'\n', '\n')
+                content = content.replace(r'\t', '\t')
+                content = content.replace(r'\"', '"')
+                content = content.replace(r"\'", "'")
+                lines = content.splitlines()
+                _log(f"  Fixed: decoded literal \\n escapes in {rel_path}")
+
         # Fix 1: Add "use client" if file uses hooks but is missing the directive
         uses_hooks = any(hook in content for hook in ["useState", "useEffect", "useRef", "useCallback", "onClick", "onChange"])
         has_directive = lines[0].strip() == '"use client";' or lines[0].strip() == "'use client';"
