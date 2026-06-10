@@ -1,0 +1,30 @@
+spms-app/app/assignments/__tests__/AssignmentsPage.test.tsx
+  s_b20a1dbbba3be4::t_18ed2bed54e610 3-4,6-14,17-33,35,38-43,45
+spms-app/app/components/Footer.tsx
+  s_b20a1dbbba3be4::t_18ed2bed54e610 2-6
+spms-app/app/components/__tests__/Footer.test.tsx
+  s_b20a1dbbba3be4::t_18ed2bed54e610 4-5,7-8
+pipeline/main.py
+  s_b20a1dbbba3be4::t_ab6c72d2300b37 368-371
+  s_b20a1dbbba3be4::t_07a265a54b22c8 477-480
+  s_b20a1dbbba3be4::t_b051795675537f 296-299,302
+  s_b20a1dbbba3be4::t_00f3371184056c 266,281
+spms-app/app/assignments/page.tsx
+  s_b20a1dbbba3be4::t_0736e871a7bb9f 18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "f56f2ae79693d66b50e5c8dbe1b48503d7ff6261",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
