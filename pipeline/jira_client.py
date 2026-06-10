@@ -94,6 +94,37 @@ def transition_ticket(ticket_id: str, target_status: str) -> bool:
         return False
 
 
+def block_ticket(ticket_id: str, reason: str, action_needed: str = "") -> bool:
+    """
+    Mark a ticket as BLOCKED:
+      - Transitions to IN REVIEW (visible to CEO, not re-picked by pipeline as To Do)
+      - Adds label BLOCKED + sets priority to Highest
+      - Posts a detailed comment with reason and action needed
+    CEO sees: ticket stuck in IN REVIEW column with red BLOCKED label at Highest priority.
+    """
+    from datetime import datetime
+    transition_ticket(ticket_id, "IN REVIEW")
+
+    url = f"{JIRA_URL}/rest/api/3/issue/{ticket_id}"
+    try:
+        requests.put(url, headers=_auth_header(), timeout=10, json={
+            "fields": {
+                "labels": ["BLOCKED"],
+                "priority": {"name": "Highest"},
+            }
+        })
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR setting BLOCKED label on {ticket_id}: {exc}")
+
+    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    msg = f"🚨 BLOCKED — AI Pipeline failure at {ts}\n\nReason: {reason}"
+    if action_needed:
+        msg += f"\n\nAction needed: {action_needed}"
+    add_comment(ticket_id, msg)
+    print(f"[Jira] {ticket_id} marked as BLOCKED.")
+    return True
+
+
 def add_comment(ticket_id: str, comment: str) -> bool:
     """Post a plain-text comment on a Jira ticket using Atlassian Document Format."""
     url = f"{JIRA_URL}/rest/api/3/issue/{ticket_id}/comment"

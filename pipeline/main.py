@@ -172,14 +172,17 @@ def _run_crew_pipeline() -> None:
 
         # ── Step 4: Git commit + push ──────────────────────────
         _log("STEP 4/5  Build check + auto-fix before commit...")
-        build_ok = _build_and_fix()
+        build_ok, build_error = _build_and_fix()
         if not build_ok:
-            _log("  Build still failing after auto-fix — aborting commit.")
+            _log("  Build FAILED — marking tickets BLOCKED in Jira.")
             for tid in ticket_ids:
-                jira_client.transition_ticket(tid, "To Do")
-                jira_client.add_comment(tid, "❌ Build failed — ticket moved back to To Do.\nCheck pipeline logs for TypeScript errors.")
+                jira_client.block_ticket(
+                    tid,
+                    reason=f"yarn build failed after auto-fix attempt.\n\n{build_error[:500]}",
+                    action_needed="Fix the TypeScript/build error shown above, then move ticket back to To Do."
+                )
             _run_state["status"] = "error"
-            _run_state["error"] = "Build failed after auto-fix. Code NOT pushed to GitHub."
+            _run_state["error"] = f"Build failed: {build_error[:200]}"
             _save_results()
             return
 
@@ -209,7 +212,14 @@ def _run_crew_pipeline() -> None:
         _run_state["deployment_url"] = deploy_url or "https://noi-sms.vercel.app"
 
     except Exception as exc:
-        _log(f"  ERROR: {exc}")
+        _log(f"  UNEXPECTED ERROR: {exc}")
+        if ticket_ids:
+            for tid in ticket_ids:
+                jira_client.block_ticket(
+                    tid,
+                    reason=f"Unexpected pipeline error: {exc}",
+                    action_needed="Check pipeline server logs for full traceback. Move ticket back to To Do when fixed."
+                )
         _run_state["status"] = "error"
         _run_state["error"] = str(exc)
         _log("=" * 55)
@@ -360,11 +370,11 @@ def _pre_build_verify() -> tuple[int, list[str]]:
     return len(fixed), fixed
 
 
-def _build_and_fix() -> bool:
+def _build_and_fix() -> tuple[bool, str]:
     """
     Run `yarn build` inside spms-app/.
     If it fails, auto-fix common agent mistakes and retry once.
-    Returns True if build passes, False if it still fails after fixing.
+    Returns (True, "") on success or (False, error_detail) on failure.
     """
     import subprocess, re
 
@@ -386,7 +396,7 @@ def _build_and_fix() -> bool:
 
     if result.returncode == 0:
         _log("  Build PASSED ✓")
-        return True
+        return True, ""
 
     _log("  Build FAILED — scanning errors and auto-fixing...")
     combined = result.stdout + result.stderr
@@ -463,9 +473,10 @@ def _build_and_fix() -> bool:
             fixed_any = True
 
     if not fixed_any:
+        error_detail = combined[-800:]
         _log("  No auto-fixable patterns found — build cannot be repaired.")
-        _log(f"  Build errors:\n{combined[-800:]}")
-        return False
+        _log(f"  Build errors:\n{error_detail}")
+        return False, error_detail
 
     # ── Second build attempt after fixes ──────────────────────
     _log("  Re-running yarn build after fixes...")
@@ -473,11 +484,12 @@ def _build_and_fix() -> bool:
 
     if result2.returncode == 0:
         _log("  Build PASSED after auto-fix ✓")
-        return True
+        return True, ""
 
+    error_detail = (result2.stdout + result2.stderr)[-600:]
     _log("  Build still FAILED after auto-fix.")
-    _log(f"  Remaining errors:\n{(result2.stdout + result2.stderr)[-600:]}")
-    return False
+    _log(f"  Remaining errors:\n{error_detail}")
+    return False, error_detail
 
 
 def _auto_git_push(ticket_ids: list) -> str:
