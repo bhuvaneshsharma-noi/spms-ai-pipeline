@@ -1,0 +1,26 @@
+[
+  {
+    "id": "SPMS-31",
+    "summary": "Change sidebar background colour to light orange",
+    "description": "Change the sidebar background colour from the current colour to light orange (#FFA500 or similar soft orange like #FFD580 or #FFF3E0). The sidebar component is located at spms-app/app/components/Sidebar.tsx. Update the background colour class or inline style so the sidebar appears light orange on all pages.",
+    "assignee": "user1",
+    "priority": "High",
+    "operation_type": "MODIFY"
+  },
+  {
+    "id": "SPMS-30",
+    "summary": "change colour of sidear to light orange",
+    "description": "No description provided.",
+    "assignee": "user1",
+    "priority": "High",
+    "operation_type": "MODIFY"
+  },
+  {
+    "id": "SPMS-28",
+    "summary": "Add exam schedule page showing upcoming exams",
+    "description": "No description provided.",
+    "assignee": "user1",
+    "priority": "High",
+    "operation_type": "CREATE"
+  }
+]
