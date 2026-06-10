@@ -6,7 +6,7 @@ Each agent has a focused role, goal, backstory, tools, and llm config.
 import os
 from crewai import Agent, LLM
 
-from tools import JiraReadTool, JiraUpdateTool, FileWriterTool, ShellCommandTool, VercelDeployTool
+from tools import JiraReadTool, JiraUpdateTool, FileReaderTool, FileWriterTool, ShellCommandTool, VercelDeployTool
 from config import OPENAI_API_KEY
 
 # Set API key in environment so CrewAI LLM can pick it up
@@ -62,11 +62,12 @@ frontend_developer = Agent(
         "Expert Next.js 14 developer specialising in student management systems. "
         "Writes clean, responsive components using the App Router and Tailwind CSS. "
         "Always writes complete files with no placeholders. "
-        "Uses JSON files for local storage instead of a database to keep things simple. "
+        "For MODIFY tickets: always reads the existing file first using FileReaderTool, "
+        "then writes the updated version with only the required changes. "
         "Every component is fully functional, handles loading and error states, "
         "and is mobile-friendly."
     ),
-    tools=[file_writer_tool],
+    tools=[FileReaderTool(), file_writer_tool],
     llm=llm,
     verbose=True,
     allow_delegation=False,

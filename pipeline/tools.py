@@ -31,6 +31,11 @@ class JiraUpdateInput(BaseModel):
     comment: str = Field(description="Comment to post on the ticket")
 
 
+class FileReaderInput(BaseModel):
+    """Input schema for FileReaderTool."""
+    filepath: str = Field(description="Absolute or relative path of the file to read")
+
+
 class FileWriterInput(BaseModel):
     """Input schema for FileWriterTool."""
     filepath: str = Field(description="Absolute or relative path to write the file to")
@@ -110,7 +115,34 @@ class JiraUpdateTool(BaseTool):
 
 
 # ─────────────────────────────────────────────────────────────
-# Tool 3 — FileWriterTool
+# Tool 3a — FileReaderTool
+# ─────────────────────────────────────────────────────────────
+
+class FileReaderTool(BaseTool):
+    """Read the full content of an existing file from disk."""
+
+    name: str = "FileReaderTool"
+    description: str = (
+        "Reads the complete content of an existing file and returns it as a string. "
+        "Use this BEFORE modifying a file so you know its exact current content."
+    )
+    args_schema: Type[BaseModel] = FileReaderInput
+
+    def _run(self, filepath: str) -> str:
+        try:
+            abs_path = os.path.abspath(filepath)
+            if not os.path.exists(abs_path):
+                return f"ERROR: File not found: {abs_path}"
+            with open(abs_path, "r", encoding="utf-8") as fh:
+                content = fh.read()
+            print(f"[FileReader] Read {abs_path} ({len(content)} chars)")
+            return content
+        except OSError as exc:
+            return f"ERROR reading {filepath}: {exc}"
+
+
+# ─────────────────────────────────────────────────────────────
+# Tool 3b — FileWriterTool
 # ─────────────────────────────────────────────────────────────
 
 class FileWriterTool(BaseTool):

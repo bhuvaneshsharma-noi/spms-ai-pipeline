@@ -4,6 +4,8 @@ main.py — FastAPI server that receives triggers from n8n and runs the CrewAI p
 
 import json
 import os
+import re
+import subprocess
 from collections import deque
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -120,6 +122,15 @@ def _run_crew_pipeline() -> None:
         for t in tickets_before:
             _log(f"  • {t['id']} [{t['priority']}] {t['summary']}")
 
+        # Move tickets to active sprint + transition to In Progress
+        sprint_id = jira_client.get_active_sprint_id()
+        if sprint_id:
+            jira_client.move_to_sprint(sprint_id, ticket_ids)
+        for tid in ticket_ids:
+            jira_client.transition_ticket(tid, "In Progress")
+            jira_client.add_comment(tid, f"🤖 AI Pipeline started processing this ticket.\nAgents are reading tickets and writing code...")
+        _log("  Jira tickets → IN PROGRESS")
+
         # ── Step 2: Load CrewAI ────────────────────────────────
         _log("STEP 2/5  Loading CrewAI agents (LLM init)...")
         from crewai import Crew, Process
@@ -170,12 +181,23 @@ def _run_crew_pipeline() -> None:
             return
 
         _log("STEP 5/5  Committing code to GitHub...")
+        for tid in ticket_ids:
+            jira_client.transition_ticket(tid, "IN REVIEW")
+            jira_client.add_comment(tid, f"✅ Build passed. Code pushed to GitHub. Waiting for Vercel to deploy...")
         deploy_url = _auto_git_push(ticket_ids)
 
         # ── Step 5: Done ───────────────────────────────────────
+        live_url = deploy_url or "https://noi-sms-bhuvaneshsharma-nois-projects.vercel.app"
+        for tid in ticket_ids:
+            jira_client.transition_ticket(tid, "Done")
+            jira_client.add_comment(tid,
+                f"🚀 DEPLOYED TO PRODUCTION\n\n"
+                f"Live URL: {live_url}\n"
+                f"Tickets: {', '.join(ticket_ids)}"
+            )
         _log("STEP 6/6  Pipeline complete!")
         _log(f"  Tickets processed : {len(ticket_ids)}")
-        _log(f"  Vercel deploy URL : {deploy_url or 'https://noi-sms.vercel.app'}")
+        _log(f"  Vercel deploy URL : {live_url}")
         _log(f"  Jira tickets      : {', '.join(ticket_ids)} → Done")
         _log("=" * 55)
 

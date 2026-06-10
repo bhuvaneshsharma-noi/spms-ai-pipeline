@@ -119,6 +119,35 @@ def add_comment(ticket_id: str, comment: str) -> bool:
         return False
 
 
+def get_active_sprint_id(board_id: int = 34) -> int | None:
+    url = f"{JIRA_URL}/rest/agile/1.0/board/{board_id}/sprint?state=active"
+    try:
+        response = requests.get(url, headers=_auth_header(), timeout=10)
+        response.raise_for_status()
+        sprints = response.json().get("values", [])
+        return sprints[0]["id"] if sprints else None
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR fetching active sprint: {exc}")
+        return None
+
+
+def move_to_sprint(sprint_id: int, ticket_ids: list[str]) -> bool:
+    if not ticket_ids:
+        return True
+    url = f"{JIRA_URL}/rest/agile/1.0/sprint/{sprint_id}/issue"
+    try:
+        response = requests.post(url, headers=_auth_header(),
+                                 json={"issues": ticket_ids}, timeout=10)
+        if response.status_code in (204, 200):
+            print(f"[Jira] Moved {ticket_ids} to sprint {sprint_id}.")
+            return True
+        print(f"[Jira] Move to sprint returned {response.status_code}: {response.text[:200]}")
+        return False
+    except requests.RequestException as exc:
+        print(f"[Jira] ERROR moving to sprint: {exc}")
+        return False
+
+
 def check_jira_reachable() -> bool:
     """Ping Jira to confirm the instance is reachable and credentials work."""
     url = f"{JIRA_URL}/rest/api/3/myself"
