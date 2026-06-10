@@ -1,0 +1,21 @@
+spms-app/app/exams/page.tsx
+  s_b20a1dbbba3be4::t_370db1c122313d 42-43
+spms-app/app/components/Sidebar.tsx
+  s_b20a1dbbba3be4::t_4489a27df9ca60 20-21,23,30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "eb482161f40c5ec36b5eeb13b4d775ba98ff1075",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
