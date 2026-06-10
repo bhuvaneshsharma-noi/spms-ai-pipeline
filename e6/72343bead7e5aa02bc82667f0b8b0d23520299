@@ -1,0 +1,28 @@
+pipeline/main.py
+  s_b20a1dbbba3be4::t_9173e697b1fb4d 381-383
+  s_b20a1dbbba3be4::t_d0b80988c63101 386,388-393
+  s_b20a1dbbba3be4::t_9d4b3a351435e7 495,498
+  s_b20a1dbbba3be4::t_e58f7b45c729e8 500,502-506
+pipeline/agents.py
+  s_b20a1dbbba3be4::t_2891d51eaac3e3 3,9,14,17-21,32-34,37-39,45,56-59,62-67,69-70,73,82,84-86,89-91,93,97,102,106,108-111,114-117,119,123,128,132,134-136,139-141,143,147
+spms-app/app/assignments/page.tsx
+  s_b20a1dbbba3be4::t_1c29d7d5a7fce8 6
+pipeline/tasks.py
+  s_b20a1dbbba3be4::t_96e5c79d4570c6 2-3,23,26-27,29,31,33-34,38-40,43-45,48,52,65,69-71,74,77-79,83-86,88-89,92,95-96,99-111,114,117-118,131-145,148,150-151,159,165-186,188-189,197,202-214,216-220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "e672343bead7e5aa02bc82667f0b8b0d23520299",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
