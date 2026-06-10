@@ -14,7 +14,7 @@ export default function AssignmentsPage() {
         if (!response.ok) throw new Error('Failed to fetch assignments');
         const data = await response.json();
         setAssignments(data);
-      } catch (err) {
+      } catch (err: unknown) {
         setError((err as Error).message);
       } finally {
         setLoading(false);
