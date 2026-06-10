@@ -126,9 +126,19 @@ def _run_crew_pipeline() -> None:
         sprint_id = jira_client.get_active_sprint_id()
         if sprint_id:
             jira_client.move_to_sprint(sprint_id, ticket_ids)
+        from datetime import datetime
+        ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
         for tid in ticket_ids:
             jira_client.transition_ticket(tid, "In Progress")
-            jira_client.add_comment(tid, f"🤖 AI Pipeline started processing this ticket.\nAgents are reading tickets and writing code...")
+            jira_client.add_comment(tid,
+                f"🤖 AI Pipeline started at {ts}\n\n"
+                f"Stage 1/5: Reading ticket requirements\n"
+                f"Stage 2/5: Frontend Developer writing code\n"
+                f"Stage 3/5: Backend Developer writing code\n"
+                f"Stage 4/5: Running build check + auto-fix\n"
+                f"Stage 5/5: Git push → Vercel deploy\n\n"
+                f"Processing tickets: {', '.join(ticket_ids)}"
+            )
         _log("  Jira tickets → IN PROGRESS")
 
         # ── Step 2: Load CrewAI ────────────────────────────────
@@ -187,19 +197,27 @@ def _run_crew_pipeline() -> None:
             return
 
         _log("STEP 5/5  Committing code to GitHub...")
+        ts_review = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
         for tid in ticket_ids:
-            jira_client.transition_ticket(tid, "IN REVIEW")
-            jira_client.add_comment(tid, f"✅ Build passed. Code pushed to GitHub. Waiting for Vercel to deploy...")
+            jira_client.transition_ticket(tid, "In Review")
+            jira_client.add_comment(tid,
+                f"✅ Build PASSED at {ts_review}\n\n"
+                f"All {len(ticket_ids)} ticket(s) implemented:\n"
+                + "\n".join(f"  • {t['id']}: {t['summary']}" for t in tickets_before)
+                + f"\n\nCode pushed to GitHub. Vercel deploy starting (~60 sec)..."
+            )
         deploy_url = _auto_git_push(ticket_ids)
 
         # ── Step 5: Done ───────────────────────────────────────
         live_url = deploy_url or "https://noi-sms-bhuvaneshsharma-nois-projects.vercel.app"
+        ts_done = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
         for tid in ticket_ids:
             jira_client.transition_ticket(tid, "Done")
             jira_client.add_comment(tid,
-                f"🚀 DEPLOYED TO PRODUCTION\n\n"
-                f"Live URL: {live_url}\n"
-                f"Tickets: {', '.join(ticket_ids)}"
+                f"🚀 DEPLOYED TO PRODUCTION at {ts_done}\n\n"
+                f"Live URL: {live_url}\n\n"
+                f"Tickets completed: {', '.join(ticket_ids)}\n"
+                f"All changes are live — please verify on the app."
             )
         _log("STEP 6/6  Pipeline complete!")
         _log(f"  Tickets processed : {len(ticket_ids)}")

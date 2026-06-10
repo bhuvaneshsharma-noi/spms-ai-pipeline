@@ -97,13 +97,13 @@ def transition_ticket(ticket_id: str, target_status: str) -> bool:
 def block_ticket(ticket_id: str, reason: str, action_needed: str = "") -> bool:
     """
     Mark a ticket as BLOCKED:
-      - Transitions to IN REVIEW (visible to CEO, not re-picked by pipeline as To Do)
+      - Transitions to BLOCKED status (appears in BLOCKED column on board)
       - Adds label BLOCKED + sets priority to Highest
       - Posts a detailed comment with reason and action needed
-    CEO sees: ticket stuck in IN REVIEW column with red BLOCKED label at Highest priority.
+    CEO sees: ticket in BLOCKED column with red label at Highest priority.
     """
     from datetime import datetime
-    transition_ticket(ticket_id, "IN REVIEW")
+    transition_ticket(ticket_id, "BLOCKED")
 
     url = f"{JIRA_URL}/rest/api/3/issue/{ticket_id}"
     try:
