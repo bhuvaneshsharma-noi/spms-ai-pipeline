@@ -1,0 +1,22 @@
+spms-app/app/layout.tsx
+  s_b20a1dbbba3be4::t_d453327d1b6096 3
+  s_b20a1dbbba3be4::t_78181eef0c235a 18
+spms-app/app/components/Navbar.tsx
+  s_b20a1dbbba3be4::t_a02fe28721a153 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "5b337c46ebe5d1ddcea6f835c35ce886dc1455ca",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
