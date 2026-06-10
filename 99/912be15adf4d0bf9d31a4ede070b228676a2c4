@@ -1,0 +1,19 @@
+pipeline/tasks.py
+  s_b20a1dbbba3be4::t_6d30d7c8124a02 23,29,31-46,52,66-71,73-106,109-111,122,124-126,140-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "99912be15adf4d0bf9d31a4ede070b228676a2c4",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
