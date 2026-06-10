@@ -183,7 +183,8 @@ def _run_crew_pipeline() -> None:
         _log("STEP 4/5  Build check + auto-fix before commit...")
         build_ok, build_error = _build_and_fix()
         if not build_ok:
-            _log("  Build FAILED — marking tickets BLOCKED in Jira.")
+            _log("  Build FAILED — discarding all agent changes (no commit to GitHub).")
+            _discard_agent_changes()
             for tid in ticket_ids:
                 jira_client.block_ticket(
                     tid,
@@ -229,12 +230,15 @@ def _run_crew_pipeline() -> None:
         _run_state["deployment_url"] = deploy_url or "https://noi-sms.vercel.app"
 
     except Exception as exc:
+        import traceback
         _log(f"  UNEXPECTED ERROR: {exc}")
+        _log(f"  Discarding all agent changes (no commit to GitHub).")
+        _discard_agent_changes()
         if ticket_ids:
             for tid in ticket_ids:
                 jira_client.block_ticket(
                     tid,
-                    reason=f"Unexpected pipeline error: {exc}",
+                    reason=f"Unexpected pipeline error: {exc}\n\n{traceback.format_exc()[-600:]}",
                     action_needed="Check pipeline server logs for full traceback. Move ticket back to To Do when fixed."
                 )
         _run_state["status"] = "error"
@@ -526,6 +530,26 @@ def _build_and_fix() -> tuple[bool, str]:
     _log("  Build still FAILED after auto-fix.")
     _log(f"  Remaining errors:\n{error_detail}")
     return False, error_detail
+
+
+def _discard_agent_changes() -> None:
+    """
+    Restore spms-app/ to last git commit.
+    Called on ANY failure — guarantees broken code is NEVER committed to GitHub.
+    """
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    try:
+        subprocess.run(
+            ["git", "checkout", "--", "spms-app/"],
+            cwd=repo_root, capture_output=True, text=True, timeout=30
+        )
+        subprocess.run(
+            ["git", "clean", "-fd", "spms-app/"],
+            cwd=repo_root, capture_output=True, text=True, timeout=30
+        )
+        _log("  Agent files discarded — repo restored to last commit.")
+    except Exception as e:
+        _log(f"  WARNING: Could not discard agent files: {e}")
 
 
 def _auto_git_push(ticket_ids: list) -> str:
