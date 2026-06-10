@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import Footer from '../Footer';
 
-describe('Footer Component', () => {
-  test('renders footer content', () => {
+describe('Footer', () => {
+  test('renders footer with current year', () => {
     render(<Footer />);
-    const footerElement = screen.getByText(/Footer Content/i);
-    expect(footerElement).toBeInTheDocument();
+    const year = new Date().getFullYear();
+    expect(screen.getByText(`© ${year} SPMS. All rights reserved.`)).toBeInTheDocument();
   });
 });

@@ -1,3 +1,7 @@
 export default function Footer() {
-  return <footer className='p-4 bg-gray-200 text-center'>Footer Content</footer>;
+  return (
+    <footer className="bg-gray-800 text-white py-4 text-center">
+      <p>&copy; {new Date().getFullYear()} SPMS. All rights reserved.</p>
+    </footer>
+  );
 }

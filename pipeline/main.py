@@ -263,6 +263,7 @@ def _pre_build_verify() -> tuple[int, list[str]]:
     PROTECTED_LAYOUT = (
         'import type { Metadata } from "next";\n'
         'import Sidebar from "./components/Sidebar";\n'
+        'import Footer from "./components/Footer";\n'
         'import "./globals.css";\n\n'
         'export const metadata: Metadata = {\n'
         '  title: "SPMS — Student Personal Management System",\n'
@@ -277,6 +278,7 @@ def _pre_build_verify() -> tuple[int, list[str]]:
         '          <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">\n'
         '            {children}\n'
         '          </main>\n'
+        '          <Footer />\n'
         '        </div>\n'
         '      </body>\n'
         '    </html>\n'
@@ -291,12 +293,13 @@ def _pre_build_verify() -> tuple[int, list[str]]:
         if rel_path == "app/layout.tsx":
             with open(abs_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            # If agent removed <html>, {children}, or <body → it's broken
-            if "<html" not in content or "{children}" not in content or "<body" not in content:
-                _log(f"  PROTECT: layout.tsx was damaged by agent — restoring safe version")
+            # Restore if agent broke core structure OR removed Footer
+            if ("<html" not in content or "{children}" not in content
+                    or "<body" not in content or "<Footer" not in content):
+                _log(f"  PROTECT: layout.tsx missing required elements — restoring safe version")
                 with open(abs_path, "w", encoding="utf-8") as f:
                     f.write(PROTECTED_LAYOUT)
-                fixed.append("app/layout.tsx (restored)")
+                fixed.append("app/layout.tsx (restored with Footer)")
             continue  # skip other fixes for layout.tsx
 
         # ── Sidebar.tsx protection ─────────────────────────────
@@ -361,6 +364,10 @@ def _pre_build_verify() -> tuple[int, list[str]]:
         content = re.sub(r'useState\(\[\]\)',  'useState<any[]>([]);',                 content)
         content = re.sub(r'useState\(\{\}\)',  'useState<Record<string, any>>({});',   content)
         content = re.sub(r'useState\(null\)',  'useState<string | null>(null)',         content)
+
+        # Fix 6: catch (err) { ... err.message → (err as Error).message
+        content = re.sub(r'\} catch \((\w+)\) \{', r'} catch (\1: unknown) {', content)
+        content = re.sub(r'\b(\w+)\.message\b', r'(\1 as Error).message', content)
 
         if content != original:
             with open(abs_path, "w", encoding="utf-8") as f:
@@ -466,6 +473,10 @@ def _build_and_fix() -> tuple[bool, str]:
         content = re.sub(r'useState\(\[\]\)', 'useState<any[]>([])', content)
         content = re.sub(r'useState\(\{\}\)', 'useState<Record<string, any>>({})', content)
         content = re.sub(r'useState\(null\)', 'useState<string | null>(null)', content)
+
+        # Fix 7: catch (err) unknown type — err.message fails TypeScript strict mode
+        content = re.sub(r'\} catch \((\w+)\) \{', r'} catch (\1: unknown) {', content)
+        content = re.sub(r'\b(\w+)\.message\b', r'(\1 as Error).message', content)
 
         if content != original:
             with open(abs_path, "w", encoding="utf-8") as f:
