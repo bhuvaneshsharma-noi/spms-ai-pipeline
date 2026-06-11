@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/exams",       label: "Exams",       icon: "📋" },
   { href: "/attendance",  label: "Attendance",  icon: "✓" },
   { href: "/timetable",   label: "Timetable",   icon: "📅" },
+  { href: "/grades",      label: "Grades",      icon: "📊" },
   { href: "/notes",       label: "Notes",       icon: "📝" },
   { href: "/timer",       label: "Study Timer", icon: "⏱" },
 ];
