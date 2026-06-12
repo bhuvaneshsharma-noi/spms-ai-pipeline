@@ -18,7 +18,7 @@ export default function Sidebar() {
   const [open, setOpen] = useState(true);
 
   return (
-    <aside className={`bg-orange-200 text-gray-800 sticky top-0 h-screen flex-shrink-0 flex flex-col transition-all duration-300 ${open ? "w-56" : "w-14"}`}>
+    <aside className={`bg-blue-100 text-gray-800 sticky top-0 h-screen flex-shrink-0 flex flex-col transition-all duration-300 ${open ? "w-56" : "w-14"}`}>
       <div className="flex items-center justify-between px-3 py-4 border-b border-orange-300">
         {open && <span className="text-xs font-bold leading-tight">Student Personal<br />Management System</span>}
         <button onClick={() => setOpen(!open)} className="ml-auto text-orange-600 hover:text-gray-900 text-xl px-1" title={open ? "Collapse" : "Expand"}>
