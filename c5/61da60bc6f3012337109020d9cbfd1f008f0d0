@@ -1,0 +1,21 @@
+spms-app/app/components/Sidebar.tsx
+  s_b20a1dbbba3be4::t_8b3960ff9ffdad 13
+spms-app/app/teachers/page.tsx
+  s_b20a1dbbba3be4::t_8b3960ff9ffdad 1-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "c561da60bc6f3012337109020d9cbfd1f008f0d0",
+  "prompts": {},
+  "sessions": {
+    "s_b20a1dbbba3be4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecf1215b-d184-4546-9847-b4bd93243322",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "bhuvaneshsharma-noi <bhuvanesh.sharma@noitechnologies.com>"
+    }
+  }
+}
