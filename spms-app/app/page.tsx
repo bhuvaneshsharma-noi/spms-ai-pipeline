@@ -15,10 +15,12 @@ export default function HomePage() {
           { href: "/timetable",   label: "Timetable",   icon: "📅", color: "bg-yellow-50 text-yellow-700" },
           { href: "/notes",       label: "Notes",       icon: "📝", color: "bg-orange-50 text-orange-700" },
           { href: "/timer",       label: "Study Timer", icon: "⏱", color: "bg-red-50 text-red-700" },
+          { href: "#",            label: "Students",    icon: "👥", color: "bg-indigo-50 text-indigo-700", count: 120 },
         ].map((item) => (
           <a key={item.href} href={item.href} className={`${item.color} rounded-xl p-6 flex flex-col items-center gap-2 hover:shadow-md transition-shadow`}>
             <span className="text-3xl">{item.icon}</span>
             <span className="font-semibold text-sm">{item.label}</span>
+            {item.count && <span className="text-lg font-bold">{item.count}</span>}
           </a>
         ))}
       </div>
