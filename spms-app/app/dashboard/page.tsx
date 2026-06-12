@@ -16,7 +16,7 @@ const Dashboard = () => {
         <div className="flex items-center">
           <Image src={student.avatar} alt="Student Avatar" width={50} height={50} className="rounded-full mr-4" />
           <div>
-            <h2 className="text-xl font-bold">{student.name}</h2>
+            <h2 className="text-xl font-bold">Welcome Back Student</h2>
             <p>{student.course} - {student.semester}</p>
             <p>Roll No: {student.rollNumber}</p>
           </div>
