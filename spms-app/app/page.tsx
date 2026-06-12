@@ -1,6 +1,10 @@
 export default function HomePage() {
   return (
     <div>
+      <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 text-white p-4 rounded-lg mb-4">
+        <h1 className="text-3xl font-bold">Welcome to SPMS</h1>
+        <p className="text-lg">Your personal student management system.</p>
+      </div>
       <h1 className="text-3xl font-bold text-slate-800 mb-2">Welcome to SPMS</h1>
       <p className="text-slate-500">Student Personal Management System — manage your academic life efficiently.</p>
       <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4">
