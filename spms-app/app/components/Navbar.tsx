@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useState } from "react";
 
 const NAV_LINKS = [
   { href: "/", label: "Dashboard" },
@@ -23,6 +24,12 @@ export default function Navbar() {
             {link.label}
           </Link>
         ))}
+        <button className="text-sm font-medium text-gray-600 hover:text-indigo-700 transition-colors">
+          Logout
+        </button>
+        <button className="text-sm font-medium text-gray-600 hover:text-indigo-700 transition-colors">
+          🔔
+        </button>
       </div>
     </nav>
   );
